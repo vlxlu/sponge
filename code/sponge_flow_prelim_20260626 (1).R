@@ -1,5 +1,3 @@
-#set your wd
-
 library(dplyr)
 library(ggplot2)
 #Things to potentially flag:
@@ -7,7 +5,7 @@ library(ggplot2)
 #DA_S35_02 puff #3 is lagging edge
 #CA)S62)_O1 puff #5 is short (cut?)
 
-sponge_flow <- read.csv("sponge_tracks_26June2026.csv")
+sponge_flow <- read.csv("raw_data/sponge_tracks_26June2026.csv")
 sponge_flow <- sponge_flow %>%
   mutate(across(c(t, x, y, r, v), as.numeric))
 
@@ -119,7 +117,12 @@ velocity_profile %>%
 
 
 ## Read in sponge morphology data set
-sponge_size <- read.csv("sponge_size_data.csv")
+sponge_size <- read.csv("raw_data/sponge_size_data.csv")
+
+
+
+
+
 
 #Join sponge size data for matching sponges
 speed_mean <- speed_mean %>%
