@@ -1,11 +1,12 @@
 library(dplyr)
 library(ggplot2)
+library(cowplot)
 #Things to potentially flag:
 #CA_S5_01 puff #4 is lagging edge
 #DA_S35_02 puff #3 is lagging edge
 #CA)S62)_O1 puff #5 is short (cut?)
 
-sponge_flow <- read.csv("raw_data/sponge_tracks_26June2026.csv")
+sponge_flow <- read.csv("raw_data/sponge_tracks_12July2026.csv")
 sponge_flow <- sponge_flow %>%
   mutate(across(c(t, x, y, r, v), as.numeric))
 
@@ -171,6 +172,15 @@ ggplot(speed_mean, aes(x = species, y = osc_flow)) +
   geom_boxplot() +
   labs(x = "Species", y = "Osculum flow (cm³/s)") +
   theme_classic()
+
+ggplot(speed_mean, aes(x = species, y = osc_flow, fill = species)) +
+  geom_boxplot()+
+  labs(x = "Species", y = "Osculum flow (cm³/s)") +
+  theme_classic() +
+  scale_fill_manual(values = c("pink",
+                        "lightblue2",
+                        "goldenrod")) +
+  theme_cowplot()
 
 model_flow <- aov(osc_flow ~ species, data = speed_mean)
 summary(model_flow)
