@@ -5,7 +5,7 @@ library(ggplot2)
 #DA_S35_02 puff #3 is lagging edge
 #CA)S62)_O1 puff #5 is short (cut?)
 
-sponge_flow <- read.csv("sponge_tracks_26June2026.csv")
+sponge_flow <- read.csv("raw_data/sponge_tracks_25July2026.csv")
 sponge_flow <- sponge_flow %>%
   mutate(across(c(t, x, y, r, v), as.numeric))
 
@@ -19,7 +19,7 @@ speed_perpuff <- sponge_flow %>%
     .groups = "drop"
   )
 print(speed_perpuff, n = Inf)
-  #What is up with AB_S26_O3     puff        6? why so slow?
+#What is up with AB_S26_O3     puff        6? why so slow?
 
 #Here, what is we trim to only keep first 2 cm max. This will make videos approximately hte same 
 #length
@@ -35,11 +35,13 @@ speed_perpuff_2cm <- sponge_flow %>%
     .groups = "drop"
   )
 
+
 print(speed_perpuff_2cm, n=Inf)
 
 
 #Correlation
 cor(speed_perpuff_2cm$speed_cm_s, speed_perpuff$speed_cm_s )
+# r = 0.9500454
 plot(speed_perpuff_2cm$speed_cm_s, speed_perpuff$speed_cm_s )
 
 #Calculate mean per osculum
@@ -52,9 +54,10 @@ speed_mean <- speed_perpuff_2cm %>%
   )  
 print(speed_mean, n = Inf)
 
+## check why AB_27_O1 and DA_S36_O2 sd_speed is NA
 
 ## Read in sponge morphology data set
-sponge_size <- read.csv("sponge_size_data.csv")
+sponge_size <- read.csv("raw_data/sponge_size_data.csv")
 
 
 #Join sponge size data for matching sponges
@@ -69,6 +72,7 @@ ggplot(speed_mean, aes(x = species, y = mean_speed)) +
 #So far, particle velocity not sig different across three species
 model <- aov(mean_speed ~ species, data = speed_mean)
 summary(model)
+## species has a significant effect on mean speed (p = 0.0187)
 
 #Ok, let's look at flow rate...this requires different columns for different species
 #becaues they have different shapes.
@@ -112,7 +116,7 @@ TukeyHSD(model_flow)
 #For TMN...want to look at flow and how it (maybe) impacts tail beat freq of fish
 
 #read in fish data
-fish_tbf <- read.csv("tbf_correlates.csv")
+fish_tbf <- read.csv("raw_data/tbf_correlates.csv")
 str(fish_tbf)
 fish_tbf <- fish_tbf  %>%
   mutate(across(c(diam1, diam2, osc_depth, osculum_vol, max_height_cm, tbf_mean, depth), 
@@ -143,5 +147,6 @@ plot(TMN_complete$osc_flow, TMN_complete$tbf_first)
 lm_interac <- lm( TMN_complete$tbf_first ~ TMN_complete$osc_flow*TMN_complete$Fish.Size)
 summary(lm_interac)
 #nope...it's just size
+
 
 
