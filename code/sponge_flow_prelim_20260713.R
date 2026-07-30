@@ -1,5 +1,8 @@
 library(dplyr)
 library(ggplot2)
+library(cowplot)
+library(emmeans)
+
 #Things to potentially flag:
 #CA_S5_01 puff #4 is lagging edge
 #DA_S35_02 puff #3 is lagging edge
@@ -67,7 +70,7 @@ speed_mean <- speed_mean %>%
 ggplot(speed_mean, aes(x = species, y = mean_speed)) +
   geom_boxplot() +
   labs(x = "Species", y = "Mean speed (cm/s)") +
-  theme_classic()
+  theme_cowplot()
 
 #So far, particle velocity not sig different across three species
 model <- aov(mean_speed ~ species, data = speed_mean)
@@ -94,16 +97,19 @@ speed_mean <- speed_mean %>%
 ggplot(speed_mean, aes(x = species, y = cross_sec_area)) +
   geom_boxplot() +
   labs(x = "Species", y = "Cross-sectional area (cm²)") +
-  theme_classic()
+  theme_cowplot()
 
 #Now calculate flow, make box plot, and run anova
 speed_mean <- speed_mean %>%
   mutate(osc_flow = cross_sec_area * mean_speed)
-ggplot(speed_mean, aes(x = species, y = osc_flow)) +
+ggplot(speed_mean, aes(x = species, y = osc_flow, fill = species)) +
   geom_boxplot() +
-  labs(x = "Species", y = "Osculum flow (cm³/s)") +
-  theme_classic()
+  labs(x = "Sponge species", y = "Osculum flow (cm³/s)", fill = "Species") +
+  scale_fill_manual(values = c("lavender","palevioletred1","lightcoral")) +
+  theme_cowplot()
 
+
+## Q1: Does oscular flow rate differ across sponge species?
 model_flow <- aov(osc_flow ~ species, data = speed_mean)
 summary(model_flow)
 TukeyHSD(model_flow)
@@ -130,6 +136,7 @@ TMN_complete <- speed_mean %>%
 print(TMN_complete, n=Inf)
 
 
+## Q3: is flow rate in TMN correlated w resident goby swimming patterns?
 #Let's see if we can't recreate Basma's finding of marg effect of fish size (qualitative)
 #on tbf
 lm_size <- lm(TMN_complete$tbf_first ~ TMN_complete$Fish.Size)
@@ -143,10 +150,60 @@ lm_flow <- lm( TMN_complete$tbf_first ~ TMN_complete$osc_flow)
 summary(lm_flow)
 plot(TMN_complete$osc_flow, TMN_complete$tbf_first)
 
+ggplot(data = TMN_complete, aes(x = osc_flow, y = tbf_first)) + 
+  geom_point() +
+  labs(x = "Osculum flow (cm³/s)", y = "First tail beat frequency") + 
+  theme_cowplot()
+
+## just flippling ^^ axes to see if it looks a bit better (prob not)
+ggplot(data = TMN_complete, aes(x = tbf_first, y = osc_flow)) + 
+  geom_point() +
+  labs(y = "Osculum flow (cm³/s)", x = "First tail beat frequency") + 
+  theme_cowplot()
+
 #Ok, look at interaction just in case
 lm_interac <- lm( TMN_complete$tbf_first ~ TMN_complete$osc_flow*TMN_complete$Fish.Size)
 summary(lm_interac)
 #nope...it's just size
 
+
+# trying models -----------------------------------------------------------
+## this is to try out models that we discussed in meeting on July 13
+
+
+lm_osc_flow <- lm(osc_flow ~ depth_m + oscula 
+                  + max_height_cm + species, data = speed_mean)
+summary(lm_osc_flow)
+
+
+## Q2: intra and interspecies flowrate-morphology relationship
+
+#intraspecies
+lm_flow_species <- lm(osc_flow ~ species*max_height_cm, data = speed_mean)
+summary(lm_flow_species)
+anova(lm_flow_species)
+
+
+#filtering data for Aplysina archeri
+archeri <- speed_mean %>% 
+  filter(species == "Archeri")
+
+lacunosa <- speed_mean %>% 
+  filter(species == "Lacunosa")
+
+tmn <- speed_mean  %>% 
+  filter(species == "Touchmenot")
+
+lm_flow_aa <- lm(osc_flow ~ max_height_cm + depth_m + oscula, data = archeri)
+summary(lm_flow_aa)
+anova(lm_flow_aa)
+
+lm_flow_al <- lm(osc_flow ~ max_height_cm + depth_m + oscula, data = lacunosa)
+summary(lm_flow_al)
+anova(lm_flow_al)
+
+lm_flow_tmn <- lm(osc_flow ~ max_height_cm + depth_m + oscula, data = tmn)
+summary(lm_flow_tmn)
+anova(lm_flow_tmn)
 
 
