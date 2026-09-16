@@ -3,6 +3,8 @@ library(ggplot2)
 library(cowplot)
 library(emmeans)
 library(ggpubr)
+library(tidyverse)
+library(ggpmisc)
 
 #Things to potentially flag:
 #CA_S5_01 puff #4 is lagging edge
@@ -79,7 +81,7 @@ ggplot(speed_mean, aes(x = species, y = mean_speed)) +
 #So far, particle velocity not sig different across three species
 model <- aov(mean_speed ~ species, data = speed_mean)
 summary(model)
-## species has a significant effect on mean speed (p = 0.0165)
+ ## species has a significant effect on mean speed (p = 0.0165)
 
 #Ok, let's look at flow rate...this requires different columns for different species
 #because they have different shapes.
@@ -108,8 +110,8 @@ speed_mean <- speed_mean %>%
   mutate(osc_flow = cross_sec_area * mean_speed)
 ggplot(speed_mean, aes(x = species, y = osc_flow, fill = species)) +
   geom_boxplot() +
-  labs(x = "Sponge species", y = "Osculum flow (cm³/s)", fill = "Species") +
-  scale_fill_manual(values = c("lavender","palevioletred1","lightcoral")) +
+  labs(x = "Sponge species", y = "Oscular flow (cm³/s)", fill = "Species") +
+  scale_fill_manual(values = c("lavender","palevioletred1","coral")) +
   theme_cowplot()
 #
 
@@ -135,11 +137,12 @@ tmn_lm <- lm(osc_flow ~ cross_sec_area, data = TMN_flow)
 summary(tmn_lm)
 
 ggplot(data = TMN_flow, aes(x = cross_sec_area, y = osc_flow)) +
-  geom_point(alpha = 0.5)+
+  geom_point(aes(colour = "coral"), alpha = 0.9)+
   geom_smooth(method = "lm")+
-  stat_cor(aes(label=..rr.label..), label.x=30, label.y=290)+
-  xlab("Cross-sectional area(cm²)")+
-  ylab("Osculum flow (cm³/s)")+
+  stat_poly_eq(aes(label = after_stat(rr.label)),
+               rr.digits = 5) +
+  xlab("Cross-sectional area (cm²)")+
+  ylab("Oscular flow (cm³/s)")+
   theme_cowplot()
 
 
@@ -190,13 +193,13 @@ plot(TMN_complete$osc_flow, TMN_complete$tbf_first)
 
 ggplot(data = TMN_complete, aes(x = osc_flow, y = tbf_first, colour = Fish.Size)) + 
   geom_point() +
-  labs(x = "Osculum flow (cm³/s)", y = "First tail beat frequency") + 
+  labs(x = "Oscular flow (cm³/s)", y = "First tail beat frequency") + 
   theme_cowplot()
 
 ## just flipping ^^ axes to see if it looks a bit better (prob not)
 ggplot(data = TMN_complete, aes(x = tbf_first, y = osc_flow)) + 
   geom_point() +
-  labs(y = "Osculum flow (cm³/s)", x = "First tail beat frequency") + 
+  labs(y = "Oscular flow (cm³/s)", x = "First tail beat frequency") + 
   theme_cowplot()
 
 #Ok, look at interaction just in case
