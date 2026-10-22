@@ -28,7 +28,7 @@ print(speed_perpuff, n = Inf)
 #What is up with AB_S26_O3     puff        6? why so slow?
 #KO_S9_O2 puff 3 is very slow
 
-#Here, what is we trim to only keep first 2 cm max. This will make videos approximately hte same 
+#Here, what is we trim to only keep first 2 cm max. This will make videos approximately the same 
 #length
 speed_perpuff_2cm <- sponge_flow %>%
   filter(osculum_ID != "") %>%
@@ -70,6 +70,7 @@ sponge_size <- read.csv("raw_data/sponge_size_data.csv")
 speed_mean <- speed_mean %>%
   left_join(sponge_size, by = c("osculum_ID" = "id"))
 
+#changing "TMN" to sp. name for figures
 speed_mean <- speed_mean %>% 
   mutate(species = case_match(species, "Touchmenot" ~ "Nolitangere", .default = species))
 
@@ -77,15 +78,14 @@ ggplot(speed_mean, aes(x = species, y = mean_speed)) +
   geom_boxplot() +
   labs(x = "Species", y = "Mean speed (cm/s)") +
   theme_cowplot()
-
 #So far, particle velocity not sig different across three species
+
 model <- aov(mean_speed ~ species, data = speed_mean)
 summary(model)
  ## species has a significant effect on mean speed (p = 0.0165)
 
 #Ok, let's look at flow rate...this requires different columns for different species
 #because they have different shapes.
-
 speed_mean <- speed_mean %>%
   mutate(
     osc_diam1_cm = as.numeric(na_if(as.character(osc_diam1_cm), ".")),
@@ -113,14 +113,13 @@ ggplot(speed_mean, aes(x = species, y = osc_flow, fill = species)) +
   labs(x = "Sponge species", y = "Oscular flow (cm³/s)", fill = "Species") +
   scale_fill_manual(values = c("lavender","palevioletred1","coral")) +
   theme_cowplot()
-#
+#TMN much faster than aplysina, but much larger variance (expected)
 
-plot(cross_sec_area ~ osc_flow, data = speed_mean)
 ## Q1: Does oscular flow rate differ across sponge species?
 model_flow <- aov(osc_flow ~ species, data = speed_mean)
 summary(model_flow)
 TukeyHSD(model_flow)
-##tmn is significantly higher than other two
+##tmn is significantly higher than aplysina
 
 #Think about applying correction of 0.5...look for old papers....
 #we will also want to emphasize that this is about RELATIVE speed, not necessarily
@@ -131,11 +130,13 @@ TukeyHSD(model_flow)
 TMN_flow <- speed_mean %>% 
   filter(species == "Nolitangere")
 
-## creating a model to see how flow rate changes with size + interacting metrics
+## seeing how flow rate changes with size
 plot(TMN_flow$osc_flow, TMN_flow$cross_sec_area)
 tmn_lm <- lm(osc_flow ~ cross_sec_area, data = TMN_flow)
 summary(tmn_lm)
+#expected that flow scales linearly w cross sectional area, r = 0.9015
 
+#plot for above
 ggplot(data = TMN_flow, aes(x = cross_sec_area, y = osc_flow)) +
   geom_point(aes(colour = "coral"), alpha = 0.9)+
   geom_smooth(method = "lm")+
@@ -207,8 +208,55 @@ lm_interac <- lm( TMN_complete$tbf_first ~ TMN_complete$osc_flow*TMN_complete$Fi
 summary(lm_interac)
 #nope...it's just size
 
+# saving plots to directory -----------------------------------------------
 
-# trying models -----------------------------------------------------------
+dir_sponge_plots <- "plots"
+if (!dir.exists(dir_sponge_plots)) dir.create(dir_sponge_plots, recursive = TRUE)
+
+#oscular flow of sponge species
+osc_flow_species <- ggplot(speed_mean, aes(x = species, y = osc_flow, fill = species)) +
+  geom_boxplot() +
+  labs(x = "Sponge species", y = "Oscular flow (cm³/s)", fill = "Species") +
+  scale_fill_manual(values = c("lavender","palevioletred1","coral")) +
+  theme_cowplot()
+
+ggsave(file.path(dir_sponge_plots, "oscular_flow_rate_by_species.png"),
+       osc_flow_species, width = 8.5, height = 5.5, dpi = 300)
+
+
+#oscular flow against cross sectional area in TMN
+TMN_osc_flow_cross_sec_area <- ggplot(data = TMN_flow, aes(x = cross_sec_area, y = osc_flow)) +
+  geom_point(aes(colour = "coral"), alpha = 0.9)+
+  geom_smooth(method = "lm")+
+  stat_poly_eq(aes(label = after_stat(rr.label)),
+               rr.digits = 5) +
+  xlab("Cross-sectional area (cm²)")+
+  ylab("Oscular flow (cm³/s)")+
+  theme_cowplot()
+
+ggsave(file.path(dir_sponge_plots, "oscular_flow_rate_by_cross_sec_area_TMN.png"),
+       TMN_osc_flow_cross_sec_area, width = 8.5, height = 5.5, dpi = 300)
+
+#tbf by fish size
+tbf_fish_size <- ggplot(data = TMN_complete, aes(x = Fish.Size, y = tbf_first, fill = Fish.Size)) +
+  geom_boxplot()+
+  geom_jitter(alpha = 0.5)+
+  labs(x = "Fish size", y = "Tail beat frequency (beats/sec)") +
+  theme_cowplot()
+
+ggsave(file.path(dir_sponge_plots, "TBF_by_fish_size.png"),
+       tbf_fish_size, width = 8.5, height = 5.5, dpi = 300)
+
+#tbf against oscular flow by fish size
+osc_flow_tbf_fish_size <- ggplot(data = TMN_complete, aes(x = osc_flow, y = tbf_first, colour = Fish.Size)) + 
+  geom_point() +
+  labs(x = "Oscular flow (cm³/s)", y = "First tail beat frequency") + 
+  theme_cowplot()
+
+ggsave(file.path(dir_sponge_plots, "tbf_by_oscular_flow_rate.png"),
+       osc_flow_tbf_fish_size, width = 8.5, height = 5.5, dpi = 300)
+
+# irrelevant stuff, trialling different things -----------------------------
 ## this is to try out models that we discussed in meeting on July 13
 
 
